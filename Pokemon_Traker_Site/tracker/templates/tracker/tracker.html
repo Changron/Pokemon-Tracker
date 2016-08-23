@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Pokemon Tracker {{ pokemonId }}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta charset="utf-8">
+    <style>
+      html, body, #map {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+      }
+    </style>
+    </head>
+  <body>
+    <p style="text-align:center;">{{ pokemons.count }}</p>
+    <div id="map"></div>
+    <script>
+      var map;
+      function initialize() {
+        map = new google.maps.Map(document.getElementById('map'), {
+          zoom: 13,
+          center: new google.maps.LatLng(22.635847,120.3145665),
+          mapTypeId: 'roadmap',
+        });
+
+        function addMarker(feature) {
+          var circle = new google.maps.Circle({
+            strokeColor: '#FF0000',
+            strokeOpacity: 0.8,
+            strokeWeight: 1,
+            fillColor: '#FF0000',
+            fillOpacity: 0.35,
+            map: map,
+            center: feature.position,
+            radius: 50
+          });
+        }
+
+        var features = [
+          {% for pokemon in pokemons %}
+          {
+            position: new google.maps.LatLng({{ pokemon.latitude }},{{ pokemon.longitude }}),
+          }{% if not forloop.last %} , {% endif %}
+          {% endfor %}
+        ];
+
+        for (var i = 0, feature; feature = features[i]; i++) {
+          addMarker(feature);
+        }
+      }
+
+    </script>
+    <script async defer
+        src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBlC64rblXkk2fWOFSPOWahgjq_q8B6xjY&callback=initialize">
+    </script>
+  </body>
+</html>
