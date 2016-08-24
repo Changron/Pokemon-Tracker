@@ -49,7 +49,7 @@ table = [True ,True, True, True, True, True,
          False, True, False, True, False,
          #120
          True, True, True, True, True,
-         True, True, True, False, True,
+         True, False, True, False, True,
          True, True, True, True, True,
          True, True, True, True, True,
          #140
