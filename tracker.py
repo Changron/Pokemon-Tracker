@@ -18,7 +18,7 @@ def getRequest(minLatitude, maxLatitude, minLongitude, maxLongitude):
         minLatitude, maxLatitude, minLongitude, maxLongitude)
     return url
 
-table = [True, True, True, True, True,
+table = [True ,True, True, True, True, True,
          True, True, True, True, False,
          False, True, False, False, True,
          False, False, True, False, True,
