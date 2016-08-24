@@ -18,6 +18,47 @@ def getRequest(minLatitude, maxLatitude, minLongitude, maxLongitude):
         minLatitude, maxLatitude, minLongitude, maxLongitude)
     return url
 
+table = [True, True, True, True, True,
+         True, True, True, True, False,
+         False, True, False, False, True,
+         False, False, True, False, True,
+         #20
+         False, True, False, True, True,
+         True, True, True, False, False,
+         True, False, False, True, True,
+         True, True, True, True, True,
+         #40
+         True, True, False, True, True,
+         False, True, False, True, True,
+         True, True, True, False, True,
+         True, True, True, True, False,
+         #60
+         True, True, True, True, True,
+         True, True, True, False, True,
+         True, False, True, True, True,
+         True, True, True, False, True,
+         #80
+         True, True, True, True, True,
+         True, True, True, True, True,
+         True, True, True, True, True,
+         True, True, False, True, True,
+         #100
+         True, False, True, True, True,
+         True, True, True, True, True,
+         True, True, True, True, True,
+         False, True, False, True, False,
+         #120
+         True, True, True, True, True,
+         True, True, True, False, True,
+         True, True, True, True, True,
+         True, True, True, True, True,
+         #140
+         True, True, True, True, True,
+         True, True, True, True, True,
+         True]
+
+]
+
 if __name__ == "__main__":
     nowMinLat = minLat
 
@@ -28,13 +69,16 @@ if __name__ == "__main__":
             pokemons = response.json()
             for pokemon in pokemons['data']:
                 if pokemon['trainerName'] == systemDetectIdentifier:
-                    spawnTime = datetime.datetime.fromtimestamp(int(pokemon['created'])).strftime('%Y-%m-%d %H:%M:%S')
-                    pokemonRequest = requests.post('http://127.0.0.1:8000/pokemon/',
-                     data = {'objId':pokemon['id'],
-                     'created':str(spawnTime), 
-                     'latitude':pokemon['latitude'], 
-                     'longitude':pokemon['longitude'], 
-                     'pokemonId':pokemon['pokemonId']})
+                    if table[pokemon['pokemonId']]:
+                        spawnTime = datetime.datetime.fromtimestamp(int(pokemon['created'])).strftime('%Y-%m-%d %H:%M:%S')
+                        pokemonRequest = requests.post('http://127.0.0.1:8000/pokemon/',
+                         data = {'objId':pokemon['id'],
+                         'created':str(spawnTime), 
+                         'latitude':pokemon['latitude'], 
+                         'longitude':pokemon['longitude'], 
+                         'pokemonId':pokemon['pokemonId']})
+                    else:
+                        pass
                 else:
                     pass
         except:
@@ -44,4 +88,4 @@ if __name__ == "__main__":
         nowMinLat += deltaLat
         if nowMinLat >= maxLat:
             nowMinLat = minLat
-            time.sleep(10)
+            time.sleep(300)
