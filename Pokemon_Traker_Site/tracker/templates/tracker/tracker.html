@@ -13,7 +13,14 @@
     </style>
     </head>
   <body>
-    <p style="text-align:center;">{{ pokemons.count }}</p>
+    <div style="height:100%;width:20%;float:left;">
+      <p style="text-align:center;">{{ pokemons.count }}隻</p>
+      <table>
+        {% for pokemon in pokemons %}
+        <tr><td>{{ pokemon.created }}</td></tr>
+        {% endfor %}
+      </table>
+    </div>
     <div id="map"></div>
     <script>
       var map;
