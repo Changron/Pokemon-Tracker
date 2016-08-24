@@ -20,3 +20,6 @@ class PokemonForm(ModelForm):
             'longitude': _('longitude'),
             'pokemonId': _('No.'),
         }
+
+class DeletePokemon(forms.Form):
+    number = forms.IntegerField()

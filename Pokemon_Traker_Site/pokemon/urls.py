@@ -5,4 +5,5 @@ from . import views
 
 urlpatterns = [
     url(r'^$', views.markPokemon, name='markPokemon'),
+    url(r'delete/$', views.deletePokemon, name='deletePokemon'),
 ]
