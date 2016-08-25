@@ -15,6 +15,7 @@ maxLong = 120.44
 minLong = 120.245
 
 systemDetectIdentifier = "(Poke Radar Prediction)"
+pokemonNewlyFoundIdentifier = "Success"
 
 def getRequest(minLatitude, maxLatitude, minLongitude, maxLongitude):
     url = "https://www.pokeradar.io/api/v1/submissions?deviceId=e75a51005d0e11e6a5118f01dbbb3e30&minLatitude=%s&maxLatitude=%s&minLongitude=%s&maxLongitude=%s&pokemonId=0" % (
@@ -42,7 +43,7 @@ def pokemonDataToString(dict):
     s += "Spawn Time: " + str(dict['created']) + ".\n"
     s += "Latitude: " + str(dict['latitude']) + "\n"
     s += "Longitude: " + str(dict['longitude']) + "\n"
-    s += "On Google Map: https://www.google.com.tw/maps/@%s,%s,15z" % (dict['latitude'],dict['longitude'])
+    s += "On Google Map: https://www.google.com.tw/maps?q=%s,%s" % (dict['latitude'],dict['longitude'])
 
     return s
 
@@ -150,7 +151,7 @@ if __name__ == "__main__":
                              'pokemonId':pokemon['pokemonId']}
                             pokemonRequest = requests.post('http://127.0.0.1:8000/pokemon/',
                              data = pokemonData)
-                            if(rareTable[pokemon['pokemonId']]):
+                            if(rareTable[pokemon['pokemonId']] and pokemonRequest.content == pokemonNewlyFoundIdentifier):
                                 sendEmail(accountData.me, accountData.pwd, accountData.me, str(pokemon['pokemonId']), pokemonDataToString(pokemonData))
                                 print "Email Sended"
                             else:
