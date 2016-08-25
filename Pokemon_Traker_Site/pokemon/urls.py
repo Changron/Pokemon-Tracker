@@ -7,4 +7,5 @@ urlpatterns = [
     url(r'^$', views.markPokemon, name='markPokemon'),
     url(r'^(?P<pokemonId>\d+)/$', views.showPokemon, name='showPokemon'),
     url(r'delete/$', views.deletePokemon, name='deletePokemon'),
+    url(r'deleteOld/$', views.deleteTooOldPokemon, name='deleteTooOldPokemon'),
 ]

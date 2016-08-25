@@ -4,15 +4,20 @@ from pokemon.models import Pokemon
 from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.core.exceptions import ObjectDoesNotExist
+from datetime import datetime, timedelta
 
 # Create your views here.
 @csrf_exempt
 def markPokemon(request):
+    dbName = 'default'
+    if request.GET.get('db'):
+        dbName = request.GET['db']
+
     if request.method == "POST":
         form = PokemonForm(request.POST)
         if form.is_valid():
             try:
-                pokemon = Pokemon.objects.get(objId = form.cleaned_data['objId'])
+                pokemon = Pokemon.objects.using(dbName).get(objId = form.cleaned_data['objId'])
                 return HttpResponse("Existed")
             except ObjectDoesNotExist:
                 form.save()
@@ -40,3 +45,12 @@ def deletePokemon(request):
 def showPokemon(request, pokemonId):
     pokemons = Pokemon.objects.filter(pokemonId = pokemonId).order_by('-created')
     return render(request,'pokemon/table.html',{'pokemons':pokemons})
+
+def deleteTooOldPokemon(request):
+    oldTime = datetime.datetime.now() - timedelta(hours = 1)
+    try:
+        oldPokemons = Pokemon.objects.using('hunt').filter(created__lt=(oldTime))
+        oldPokemons.delete()
+        return HttpResponse("Successfully Deleted Old Pokemons")
+    except:
+        return HttpResponse("Error")
