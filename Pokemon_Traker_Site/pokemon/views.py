@@ -20,7 +20,7 @@ def markPokemon(request):
                 pokemon = Pokemon.objects.using(dbName).get(objId = form.cleaned_data['objId'])
                 return HttpResponse("Existed")
             except ObjectDoesNotExist:
-                form.save()
+                form.save(using=dbName)
                 return HttpResponse("Success")
         else:
             return HttpResponse("Fail")
