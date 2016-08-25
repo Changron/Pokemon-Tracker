@@ -36,3 +36,7 @@ def deletePokemon(request):
     else:
         form = DeletePokemon()
         return render(request,'pokemon/form.html',{'form':form})
+
+def showPokemon(request, pokemonId):
+    pokemons = Pokemon.objects.filter(pokemonId = pokemonId).order_by('-created')
+    return render(request,'pokemon/table.html',{'pokemons':pokemons})
