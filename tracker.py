@@ -4,20 +4,9 @@ from datetime import timedelta
 import sys
 import time
 import smtplib
-import accountData
+import account_data
 from email.MIMEText import MIMEText
-
-maxLat = 22.78
-minLat = 22.47
-emailMaxLat = 22.695
-emailMinLat = 22.66
-
-deltaLat = 0.03
-
-maxLong = 120.44
-minLong = 120.245
-emailMaxLong = 120.327
-emailMinLong = 120.281
+from user_list import user_list, tracker_list
 
 systemDetectIdentifier = "(Poke Radar Prediction)"
 pokemonNewlyFoundIdentifier = "Success"
@@ -52,88 +41,23 @@ def pokemonDataToString(dict):
 
     return s
 
-def withinEmailZone(pokemon):
-    withinLat = (pokemon['latitude'] < emailMaxLat) and (emailMinLat < pokemon['latitude'])
-    withinLong = (pokemon['longitude'] < emailMaxLong) and (emailMinLong < pokemon['longitude'])
+def withinZone(pokemon, area):
+    withinLat = (pokemon['latitude'] < area.max_lat) and (area.min_lat < pokemon['latitude'])
+    withinLong = (pokemon['longitude'] < area.max_long) and (area.min_long < pokemon['longitude'])
     return withinLong and withinLat
 
-table = [True ,True, True, True, True, True,
-         True, True, True, True, False,
-         False, True, False, False, True,
-         False, False, True, False, True,
-         #20
-         False, True, False, True, True,
-         True, True, True, False, False,
-         True, False, False, True, True,
-         True, True, True, True, True,
-         #40
-         True, True, False, True, True,
-         False, True, False, True, True,
-         True, True, True, False, True,
-         True, True, True, True, False,
-         #60
-         True, True, True, True, True,
-         True, True, True, False, True,
-         True, False, True, True, True,
-         True, True, True, False, True,
-         #80
-         True, True, True, True, True,
-         True, True, True, True, True,
-         True, True, True, True, True,
-         True, True, False, True, True,
-         #100
-         True, False, True, True, True,
-         True, True, True, True, True,
-         True, True, True, True, True,
-         False, True, False, True, False,
-         #120
-         True, True, True, True, True,
-         True, False, True, False, True,
-         True, True, True, True, True,
-         True, True, True, True, True,
-         #140
-         True, True, True, True, True,
-         True, True, True, True, True,
-         True]
+def withinTime(spawn_time):
+    now = datetime.datetime.now()
+    notTooOutDated = (now - timedelta(minutes = 30) < spawn_time)
+    notInTheFuture = (spawn_time - timedelta(minutes = 30) < now)
+    return notTooOutDated and notInTheFuture
 
-rareTable = [False ,False, False, True, False, False,
-         True, False, False, True, False,
-         False, False, False, False, False,
-         False, False, False, False, False,
-         #20
-         False, False, False, False, False,
-         True, False, False, False, False,
-         False, False, False, False, False,
-         False, False, True, False, False,
-         #40
-         False, False, False, False, False,
-         False, False, False, False, False,
-         False, False, False, False, False,
-         False, False, False, False, False,
-         #60
-         False, False, False, False, True,
-         False, False, False, False, False,
-         False, False, False, False, False,
-         False, False, False, False, False,
-         #80
-         False, False, False, False, False,
-         False, False, False, False, False,
-         False, False, False, True, False,
-         False, False, False, False, False,
-         #100
-         False, False, False, False, False,
-         True, True, True, False, False,
-         False, False, True, False, False,
-         False, False, False, False, False,
-         #120
-         False, False, False, False, False,
-         False, False, False, False, True,
-         True, True, False, True, True,
-         True, True, False, False, False,
-         #140
-         True, True, True, True, True,
-         True, False, False, True, True,
-         True]
+def userWantsEmail(user, pokemon, respond):
+    isInUserTable = user.table[pokemon['pokemonId']]
+    didNotSendEmailYet = (respond.content == pokemonNewlyFoundIdentifier)
+    withinEmailZone = withinZone(pokemon, user.area)
+    userIsActive = user.active
+    return isInUserTable and didNotSendEmailYet and withinEmailZone and userIsActive
 
 # mode 0, normal
 # mode 1, hunting mode, only rare pokemon will be recorded
@@ -142,60 +66,63 @@ mode = 0
 if __name__ == "__main__":
     mode = int(raw_input("Enter Mode: (0 for normal, 1 for hunting mode)"))
 
-    nowMinLat = minLat
+    delta_lat = 0.03
+    search_list = user_list
+    if mode == 0:
+        search_list = tracker_list
 
     while True:
-        try:
-            res = getRequest(nowMinLat, min(maxLat, nowMinLat+deltaLat), minLong, maxLong)
-            response = requests.get(res)
-            pokemons = response.json()
-            #for all pokemons
-            for pokemon in pokemons['data']:
-                # if pokemon is system detected
-                if pokemon['trainerName'] == systemDetectIdentifier:
-                    # if the pokemon is the one we want to record
-                    if ((mode==0 and table[pokemon['pokemonId']]) or (mode==1 and rareTable[pokemon['pokemonId']])):
-                        spawnTime = datetime.datetime.fromtimestamp(int(pokemon['created']))
-                        now = datetime.datetime.now()
-                        notTooOutDated = (now - timedelta(minutes = 30) < spawnTime)
-                        notInTheFuture = (spawnTime - timedelta(minutes = 30) < now)
-                        withinLat = (pokemon['latitude'] < maxLat) and (minLat < pokemon['latitude'])
-                        withinLong = (pokemon['longitude'] < maxLong) and (minLong < pokemon['longitude'])
-                        if notInTheFuture and notTooOutDated and withinLong and withinLat:
-                            spawnTime = spawnTime.strftime('%Y-%m-%d %H:%M:%S')
-                            pokemonData = {'objId':pokemon['id'],
-                             'created':str(spawnTime), 
-                             'latitude':pokemon['latitude'], 
-                             'longitude':pokemon['longitude'], 
-                             'pokemonId':pokemon['pokemonId']}
-                            if mode:
-                                pokemonRequest = requests.post('http://127.0.0.1:8000/pokemon/?db=hunt',
-                                data = pokemonData)
-                            else:
-                                pokemonRequest = requests.post('http://127.0.0.1:8000/pokemon/',
-                                data = pokemonData)
-                            if(rareTable[pokemon['pokemonId']] and pokemonRequest.content == pokemonNewlyFoundIdentifier) and withinEmailZone(pokemon):
-                                sendEmail(accountData.me, accountData.pwd, accountData.me, str(pokemon['pokemonId']), pokemonDataToString(pokemonData))
-                                print "Email Sended"
+        for user in search_list:
+            if (mode and user.active) or (mode == 0):
+                now_min_lat = user.area.min_lat
+                while now_min_lat < user.area.max_lat:
+                    try:
+                        res = getRequest(now_min_lat, min(user.area.max_lat, now_min_lat+delta_lat), user.area.min_long, user.area.max_long)
+                        response = requests.get(res)
+                        pokemons = response.json()
+                        #for all pokemons
+                        for pokemon in pokemons['data']:
+                            # if pokemon is system detected
+                            if pokemon['trainerName'] == systemDetectIdentifier:
+                                # if the pokemon is the one we want to record
+                                if user.table[pokemon['pokemonId']]:
+                                    spawnTime = datetime.datetime.fromtimestamp(int(pokemon['created']))
+                                    if withinTime(spawnTime) and withinZone(pokemon, user.area):
+                                        spawnTime = spawnTime.strftime('%Y-%m-%d %H:%M:%S')
+                                        pokemonData = {'objId':pokemon['id'],
+                                         'created':str(spawnTime), 
+                                         'latitude':pokemon['latitude'], 
+                                         'longitude':pokemon['longitude'], 
+                                         'pokemonId':pokemon['pokemonId']}
+                                        if mode:
+                                            pokemonRespond = requests.post('http://127.0.0.1:8000/pokemon/?db=hunt',
+                                            data = pokemonData)
+                                        else:
+                                            pokemonRespond = requests.post('http://127.0.0.1:8000/pokemon/',
+                                            data = pokemonData)
+                                        # if user wants, if newly found, and is near enough
+                                        if userWantsEmail(user, pokemonData, pokemonRespond):
+                                            sendEmail(account_data.me, account_data.pwd, user.email, str(pokemon['pokemonId']), pokemonDataToString(pokemonData))
+                                            print "Email Sended"
+                                        else:
+                                            pass
+                                    else:
+                                        pass
+                                else:
+                                    pass
                             else:
                                 pass
-                        else:
-                            pass
-                    else:
-                        pass
-                else:
-                    pass
-        except:
-            print "failed"
-            print sys.exc_info()[0]
-        print "small zone finished."
-        nowMinLat += deltaLat
-        if nowMinLat >= maxLat:
-            nowMinLat = minLat
-            print "cycle finished."
-            #hunt mode
-            if mode:
-                time.sleep(60)
-                pokemonRequest = requests.get('http://127.0.0.1:8000/pokemon/deleteOld/')
+                    except:
+                        print "failed"
+                        print sys.exc_info()[0]
+                    print "small zone finished."
+                    now_min_lat += delta_lat
+                    if now_min_lat >= user.area.max_lat:
+                        print "cycle finished."
+                        #hunt mode
             else:
-                time.sleep(300)
+                pass
+        if mode:
+            time.sleep(60)
+        else:
+            time.sleep(300)
